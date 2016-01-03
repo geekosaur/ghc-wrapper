@@ -23,7 +23,10 @@
 # - POD documentation
 # - factor out self-check for install mode
 # - USEXXX=release USEXXX=-|system USEXXX=head|devel (USEXXX=prerelease?)
-# - maybe someday: %pkgs and /opt from .config
+# - USEXXX=anyVERSION (also look for version on $PATH instead of forcing /opt)
+#     ...and maybe that should be the default? esp. with below
+# - /opt not hardcoded; allow a list of repo locations
+# - maybe someday: %pkgs and above from .config
 # - better error checking, e.g. no /opt or /opt/$whats{$what}
 # - buff $ENV{GHC_WRAPPER_TEST} into a real control mechanism
 #     e.g. the clean check could use --version and GHC_WRAPPER_MODE=installer
