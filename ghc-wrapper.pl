@@ -58,7 +58,8 @@ my %whats;
 sub vcmp {
   my ($x, $y) = @_;
   my $d;
-  for (my $i = 0; $i < @$x && $i < @$y; $i++) {
+  # first component is actual path
+  for (my $i = 1; $i < @$x && $i < @$y; $i++) {
     if ($d = ($x->[$i] <=> $y->[$i])) {
       return $d;
     }
@@ -111,12 +112,12 @@ if (!defined $where && !exists $ENV{$use} && -d "/opt/$whats{$what}") {
     next if $_ eq 'head';
     # @@@ are there update releases where this doesn't work?
     next if ! -d "/opt/$whats{$what}/$_/lib/ghc-$_";
-    push @ghcs, [map {$_ + 0} split(/\./, $_)];
+    push @ghcs, [$_, map {$_ + 0} split(/\./, $_)];
   }
   closedir $d;
   if (@ghcs) {
     @ghcs = sort {vcmp($b, $a)} @ghcs;
-    $where = "/opt/$whats{$what}/$ghcs[0]/bin";
+    $where = "/opt/$whats{$what}/$ghcs[0][0]/bin";
   }
 }
 # ...try $PATH for system or otherwise installed
@@ -154,6 +155,7 @@ if (!defined $where) {
     }
   }
 }
+print STDERR "where=$where what=$what\n";
 if (!defined $where) {
   die "ghc-wrapper: can't find a $whats{$what} installation\n";
 }
