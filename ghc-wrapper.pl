@@ -66,10 +66,14 @@ sub vcmp {
   return @$x <=> @$y;
 }
 
-
 # what am I wrapping?
 my $what = $0;
 $what =~ s,.*/,,;
+if (exists $ENV{GHC_WRAPPER_TEST} &&
+    $ENV{GHC_WRAPPER_TEST} ne '' &&
+    $ENV{GHC_WRAPPER_TEST} ne 'y') {
+  $what = $ENV{GHC_WRAPPER_TEST};
+}
 unless (exists $whats{$what}) {
   die "ghc-wrapper: unknown program \"$what\"\n";
 }
