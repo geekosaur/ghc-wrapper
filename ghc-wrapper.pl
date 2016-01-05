@@ -12,7 +12,6 @@
 #
 # @@@@@@@@
 #
-# * fix version comparison
 # - install mode, if run as something not in the list we take --install[=PATH],
 #     --remove[=PATH], --version
 # - for --install, use first of hardlink/symlink/copy that works
@@ -103,11 +102,6 @@ if (!defined $where && !exists $ENV{$use} && -d "/opt/$whats{$what}") {
   while (readdir $d) {
     next if /^\./;
     next unless -x "/opt/$whats{$what}/$_/bin/$whats{$what}";
-    # @@@@@@@@ dumb lexical comparison
-    # @@ need to wait to see what prereleases look like
-    # @@ also need to see what HEAD build looks like
-    # "head" or a version
-    # if a version, we extract the *actual* version from its lib dir
     # here, we simply ignore head and prereleases
     next if $_ eq 'head';
     # @@@ are there update releases where this doesn't work?
