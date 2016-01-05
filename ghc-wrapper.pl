@@ -12,8 +12,7 @@
 #
 # @@@@@@@@
 #
-# - fix version comparison
-#     see .debs in ~/Downloads for head, prerelease
+# * fix version comparison
 # - install mode, if run as something not in the list we take --install[=PATH],
 #     --remove[=PATH], --version
 # - for --install, use first of hardlink/symlink/copy that works
@@ -56,6 +55,18 @@ my %whats;
   }
 }
 
+sub vcmp {
+  my ($x, $y) = @_;
+  my $d;
+  for (my $i = 0; $i < @$x && $i < @$y; $i++) {
+    if ($d = ($x->[$i] <=> $y->[$i])) {
+      return $d;
+    }
+  }
+  return @$x <=> @$y;
+}
+
+
 # what am I wrapping?
 my $what = $0;
 $what =~ s,.*/,,;
@@ -90,11 +101,17 @@ if (!defined $where && !exists $ENV{$use} && -d "/opt/$whats{$what}") {
     # @@@@@@@@ dumb lexical comparison
     # @@ need to wait to see what prereleases look like
     # @@ also need to see what HEAD build looks like
-    push @ghcs, $_;
+    # "head" or a version
+    # if a version, we extract the *actual* version from its lib dir
+    # here, we simply ignore head and prereleases
+    next if $_ eq 'head';
+    # @@@ are there update releases where this doesn't work?
+    next if ! -d "/opt/$whats{$what}/$_/lib/ghc-$_";
+    push @ghcs, [map {$_ + 0} split(/\./, $_)];
   }
   closedir $d;
   if (@ghcs) {
-    @ghcs = sort {$b cmp $a} @ghcs;
+    @ghcs = sort {vcmp($b, $a)} @ghcs;
     $where = "/opt/$whats{$what}/$ghcs[0]/bin";
   }
 }
