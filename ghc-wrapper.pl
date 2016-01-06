@@ -84,7 +84,7 @@ my $where;
 my $use = 'USE' . uc $whats{$what};
 # ...specific one via envar
 if (exists $ENV{$use} && $ENV{$use} ne '' && $ENV{$use} ne '-') {
-  if ($ENV{use} =~ /^\./ || $ENV{$use} =~ m,/,) {
+  if ($ENV{$use} =~ /^\./ || $ENV{$use} =~ m,/,) {
     die "ghc-wrapper: $use ($ENV{$use}) is not safe\n";
   }
   elsif (! -x "/opt/$whats{$what}/$ENV{$use}/bin/$whats{$what}") {
