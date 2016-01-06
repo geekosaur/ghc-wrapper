@@ -149,7 +149,6 @@ if (!defined $where) {
     }
   }
 }
-print STDERR "where=$where what=$what\n";
 if (!defined $where) {
   die "ghc-wrapper: can't find a $whats{$what} installation\n";
 }
