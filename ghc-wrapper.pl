@@ -29,6 +29,10 @@
 # - buff $ENV{GHC_WRAPPER_TEST} into a real control mechanism
 #     e.g. the clean check could use --version and GHC_WRAPPER_MODE=installer
 # - default ghc from .config (editable via install mode)
+# - maybe a way to ease migrating hackage installs from one version to
+#     another? harder than it seems, in my case lots of stuff installed but
+#     only one package truly needs to be migrated, and two of the packages
+#     should *not* be because they're dev builds
 #
 
 use 5.012;
