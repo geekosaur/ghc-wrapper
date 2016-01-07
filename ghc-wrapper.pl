@@ -28,6 +28,7 @@
 # - better error checking, e.g. no /opt or /opt/$whats{$what}
 # - buff $ENV{GHC_WRAPPER_TEST} into a real control mechanism
 #     e.g. the clean check could use --version and GHC_WRAPPER_MODE=installer
+# - default ghc from .config (editable via install mode)
 #
 
 use 5.012;
