@@ -33,6 +33,8 @@
 #     another? harder than it seems, in my case lots of stuff installed but
 #     only one package truly needs to be migrated, and two of the packages
 #     should *not* be because they're dev builds
+# - %pkgs probably needs a way to indicate optional programs (e.g. not
+#     present in older versions)
 #
 
 use 5.012;
