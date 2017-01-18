@@ -12,6 +12,7 @@
 #
 # @@@@@@@@
 #
+# - ~/.config/ghc-wrapper/XXX for default
 # - install mode, if run as something not in the list we take --install[=PATH],
 #     --remove[=PATH], --version
 # - for --install, use first of hardlink/symlink/copy that works
@@ -109,10 +110,12 @@ if (!defined $where && !exists $ENV{$use} && -d "/opt/$whats{$what}") {
   while (readdir $d) {
     next if /^\./;
     next unless -x "/opt/$whats{$what}/$_/bin/$whats{$what}";
-    # here, we simply ignore head and prereleases
-    next if $_ eq 'head';
-    # @@@ are there update releases where this doesn't work?
-    next if ! -d "/opt/$whats{$what}/$_/lib/ghc-$_";
+    if ($whats{$what} eq 'ghc') {
+      # here, we simply ignore head and prereleases
+      next if $_ eq 'head';
+      # @@@ are there update releases where this doesn't work?
+      next if ! -d "/opt/$whats{$what}/$_/lib/ghc-$_";
+    }
     push @ghcs, [$_, map {$_ + 0} split(/\./, $_)];
   }
   closedir $d;
