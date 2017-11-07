@@ -12,7 +12,7 @@
 #
 # @@@@@@@@
 #
-# - ~/.config/ghc-wrapper/XXX for default
+# - ~/.config/ghc-wrapper/XXX for default (partially done)
 # - install mode, if run as something not in the list we take --install[=PATH],
 #     --remove[=PATH], --version
 # - for --install, use first of hardlink/symlink/copy that works
@@ -90,70 +90,91 @@ my $where;
 
 # find a suitable installation of the package
 my $use = 'USE' . uc $whats{$what};
-# ...specific one via envar
-if (exists $ENV{$use} && $ENV{$use} ne '' && $ENV{$use} ne '-') {
-  if ($ENV{$use} =~ /^\./ || $ENV{$use} =~ m,/,) {
-    die "ghc-wrapper: $use ($ENV{$use}) is not safe\n";
-  }
-  elsif (! -x "/opt/$whats{$what}/$ENV{$use}/bin/$whats{$what}") {
-    die "ghc-wrapper: $whats{$what} $ENV{$use} doesn't seem to be installed\n";
-  }
-  else {
-    $where = "/opt/$whats{$what}/$ENV{$use}/bin";
-  }
-}
-# ...latest hvr version, if one exists
-if (!defined $where && !exists $ENV{$use} && -d "/opt/$whats{$what}") {
-  my @ghcs;
-  opendir my $d, "/opt/$whats{$what}"
-    or die "ghc-wrapper($what): /opt/$whats{$what}: $!";
-  while (readdir $d) {
-    next if /^\./;
-    next unless -x "/opt/$whats{$what}/$_/bin/$whats{$what}";
-    if ($whats{$what} eq 'ghc') {
-      # here, we simply ignore head and prereleases
-      next if $_ eq 'head';
-      # @@@ are there update releases where this doesn't work?
-      next if ! -d "/opt/$whats{$what}/$_/lib/ghc-$_";
+TRYUSE:
+{
+  # ...specific one via envar
+  if (exists $ENV{$use} && $ENV{$use} ne '' && $ENV{$use} ne '-') {
+    if ($ENV{$use} =~ /^\./ || $ENV{$use} =~ m,/,) {
+      die "ghc-wrapper: $use ($ENV{$use}) is not safe\n";
     }
-    push @ghcs, [$_, map {$_ + 0} split(/\./, $_)];
+    elsif (! -x "/opt/$whats{$what}/$ENV{$use}/bin/$whats{$what}") {
+      die "ghc-wrapper: $whats{$what} $ENV{$use} doesn't seem to be installed\n";
+    }
+    else {
+      $where = "/opt/$whats{$what}/$ENV{$use}/bin";
+    }
   }
-  closedir $d;
-  if (@ghcs) {
-    @ghcs = sort {vcmp($b, $a)} @ghcs;
-    $where = "/opt/$whats{$what}/$ghcs[0][0]/bin";
+  # ...specific one via config file (@@@ hack)
+  if (!defined $where && !exists $ENV{$use} &&
+      -f "$ENV{HOME}/.ghc-wrapper/$what") {
+    if (-x "$ENV{HOME}/.ghc-wrapper/$what") {
+      $where = "$ENV{HOME}/.ghc-wrapper";
+    } else {
+      open my $f, "$ENV{HOME}/.ghc-wrapper/$what"
+	or die "ghc-wrapper($what): $ENV{HOME}/.ghc-wrapper/$what: $!";
+      chomp($where = <$f>);
+      close $f;
+    }
+    if (! -f $where) {
+      # try as a version
+      $ENV{$use} = $where;
+      $where = undef;
+      redo TRYUSE;
+    }
   }
-}
-# ...try $PATH for system or otherwise installed
-if (!defined $where) {
-  for my $d (split /:/, $ENV{PATH}) {
-    if (-x "$d/$whats{$what}") {
-      # making sure it's not us
-      if (!open my $f, '<', "$d/$whats{$what}") {
-	die "ghc-wrapper: $d/$whats{$what} unreadable: $!\n";
-	# in theory could just assume it's safe, since a script would need
-	# to be readable to be run, so it must be a binary
-	#$where = $d;
-      } else {
-	# only first 64 bytes, in case it is a binary
-	binmode $f;
-	defined read $f, $_, 64
-	  or die "ghc-wrapper: read $d/$whats{$what}: $!";
-	close $f;
-	if ($_ eq '') {
-	  # in theory, could just let it go; user will find out
-	  # soon enough. in practice, it would be confusing
-	  die "ghc-wrapper: $d/$whats{$what} empty?\n";
-	}
-	elsif (/^#![^\r\n]*perl/) {
-	  # assume it's us or some other potentially unsafe wrapper
-	  # (note that the official "binaries" are shell wrappers)
-	  warn "ghc-wrapper: avoiding myself ($d/$whats{$what})\n"
-	    if exists $ENV{GHC_WRAPPER_TEST};
-	}
-	else {
-	  $where = $d;
-	  last;
+  # ...latest hvr version, if one exists
+  if (!defined $where && !exists $ENV{$use} && -d "/opt/$whats{$what}") {
+    my @ghcs;
+    opendir my $d, "/opt/$whats{$what}"
+      or die "ghc-wrapper($what): /opt/$whats{$what}: $!";
+    while (readdir $d) {
+      next if /^\./;
+      next unless -x "/opt/$whats{$what}/$_/bin/$whats{$what}";
+      if ($whats{$what} eq 'ghc') {
+	# here, we simply ignore head and prereleases
+	next if $_ eq 'head';
+	# @@@ are there update releases where this doesn't work?
+	next if ! -d "/opt/$whats{$what}/$_/lib/ghc-$_";
+      }
+      push @ghcs, [$_, map {$_ + 0} split(/\./, $_)];
+    }
+    closedir $d;
+    if (@ghcs) {
+      @ghcs = sort {vcmp($b, $a)} @ghcs;
+      $where = "/opt/$whats{$what}/$ghcs[0][0]/bin";
+    }
+  }
+  # ...try $PATH for system or otherwise installed
+  if (!defined $where) {
+    for my $d (split /:/, $ENV{PATH}) {
+      if (-x "$d/$whats{$what}") {
+	# making sure it's not us
+	if (!open my $f, '<', "$d/$whats{$what}") {
+	  die "ghc-wrapper: $d/$whats{$what} unreadable: $!\n";
+	  # in theory could just assume it's safe, since a script would need
+	  # to be readable to be run, so it must be a binary
+	  #$where = $d;
+	} else {
+	  # only first 64 bytes, in case it is a binary
+	  binmode $f;
+	  defined read $f, $_, 64
+	    or die "ghc-wrapper: read $d/$whats{$what}: $!";
+	  close $f;
+	  if ($_ eq '') {
+	    # in theory, could just let it go; user will find out
+	    # soon enough. in practice, it would be confusing
+	    die "ghc-wrapper: $d/$whats{$what} empty?\n";
+	  }
+	  elsif (/^#![^\r\n]*perl/) {
+	    # assume it's us or some other potentially unsafe wrapper
+	    # (note that the official "binaries" are shell wrappers)
+	    warn "ghc-wrapper: avoiding myself ($d/$whats{$what})\n"
+	      if exists $ENV{GHC_WRAPPER_TEST};
+	  }
+	  else {
+	    $where = $d;
+	    last;
+	  }
 	}
       }
     }
