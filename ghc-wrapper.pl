@@ -36,6 +36,7 @@
 #     should *not* be because they're dev builds
 # - %pkgs probably needs a way to indicate optional programs (e.g. not
 #     present in older versions)
+# - option to print out which group an executable belongs to?
 #
 
 use 5.012;
